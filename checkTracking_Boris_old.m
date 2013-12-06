@@ -1,4 +1,8 @@
-function [perror] = comparewithoriginal(truedata, mydata,Nframes)
+function [perror] = checkTracking_Boris_old(truedata, mydata, Nframes)
+
+if nargin < 3
+    Nframes = truedata.nFrames;
+end
 
 trueobjectsnormalobjects = [0 0];
 numberofallobjrect = 0;
