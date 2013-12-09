@@ -1,6 +1,6 @@
 function error = checkTrackingBoris(data, ids)
 
-teMap = containers.Map({0}, {0}); % maps true objects to estimated ones
+teMap = [0, 0]; % maps true objects to estimated ones
 nAllObjs = 0;
 nMissed = 0;
 
@@ -15,12 +15,12 @@ for iFrame=1:data.nFrames
         tid = trueId(i); % true id
         eid = id(i); % estimated id
         
-        if teMap.isKey(tid)
-            if teMap(tid) ~= eid
-                nMissed = nMissed + 1;
-            end
-        else
-            teMap(tid) = eid;
+        if ~(ismember(tid, teMap(:,1)) || ismember(eid, teMap(:,2)))
+            teMap(end+1,:) = [tid, eid];
+        elseif(teMap(teMap(:,1) == tid,2) ~= eid)
+            nMissed = nMissed + 1;
+        elseif(teMap(teMap(:,2) == eid,1) ~= tid)
+            nMissed = nMissed + 1;
         end
         
         nAllObjs = nAllObjs + 1;

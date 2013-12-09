@@ -1,6 +1,17 @@
-function [ ids ] = greedyRT_XY_only( data )
-%GREEDYRT_XY_ONLY Summary of this function goes here
-%   Detailed explanation goes here
+function [ ids ] = nearestRT( data, w )
+% Solves tracking problem in the easiest way - just selecting the nearest
+% rect from the next frame. Distance is measured using coordinates, scale,
+% velocity and hog with some weights w.
+%
+% Inputs:
+%   data - struct that can be read from data.mat or generated with
+%       reduceDataFPS
+%   w = [xy; scale; velocity; hog] is a vector (4x1) of boosting weights
+%
+% Outputs:
+%   ids - cell array, with size data.nFrames, each element is a
+%       vector of integers, representing an id of the corresponding
+%       rectangle from the data.
 
 % how far away should rectangle jump to be considered as a different one
 divergeDistance = 50;
@@ -14,14 +25,15 @@ nObjs = frameData.nObjects;
 ids{1} = (1:nObjs)';
 idCounter = 1+nObjs;
 
+% loop through all the frames
 for frame=2:data.nFrames
     % current frame
     frameData = data.Frames(frame);
-    xy = featureMatrix(frameData);
+    xy = featureMatrix(frameData, w);
     
     % previous frame
     frameDataPrev = data.Frames(frame-1);
-    xyP = featureMatrix(frameDataPrev);
+    xyP = featureMatrix(frameDataPrev, w);
     
     % distances matrix
     dist = [];
@@ -65,12 +77,25 @@ end;
 end
 
 % returns matrix of features (nFeatures, nRectangles)
-function fmat = featureMatrix(frameData)
+function fmat = featureMatrix(frameData, w)
     nObjs = frameData.nObjects;
-    fmat = zeros(2,nObjs);
+    fmat = [];
     for i = 1:nObjs
         obj = frameData.objects(i);
-        box = obj.box;
-        fmat(:, i) = [str2double(box.xc); str2double(box.yc)];
+        fmat(:, i) = getFVector(obj, w);
     end;
 end
+
+% returns one feature vector for one object
+% w = [a;b;c;d] is a vector of weights
+% a - stands for xy, b - scale, c - velocity, d - hog
+function v = getFVector(obj, w)
+    box = obj.box;
+    r = [str2double(box.xc); str2double(box.yc)];
+    s = [str2double(box.w);  str2double(box.h) ];
+    hog = obj.hog;
+    h = reshape(hog, 10*5*31, 1);
+    v = [r*w(1); s*w(2); h*w(4)];
+end
+
+
