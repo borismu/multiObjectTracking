@@ -29,6 +29,10 @@ for frame=2:data.nFrames
     nRectangles = nRectangles + numel(idsOrig);
     nCorrectlyTracked = nCorrectlyTracked + ...
         sum(permutingOrig==permutingEst);
+    
+    if sum(permutingOrig~=permutingEst)>0
+        disp(frame);
+    end
 end;
 
 error = 1 - nCorrectlyTracked/nRectangles;

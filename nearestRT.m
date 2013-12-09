@@ -14,7 +14,7 @@ function [ ids ] = nearestRT( data, w )
 %       rectangle from the data.
 
 % how far away should rectangle jump to be considered as a different one
-divergeDistance = 50;
+divergeDistance = 200;
 
 idCounter = 1; % id for each new rectangle
 ids = {};
@@ -27,30 +27,31 @@ idCounter = 1+nObjs;
 
 % loop through all the frames
 for frame=2:data.nFrames
-    % current frame
-    frameData = data.Frames(frame);
-    xy = featureMatrix(frameData, w);
-    
-    % previous frame
-    frameDataPrev = data.Frames(frame-1);
-    xyP = featureMatrix(frameDataPrev, w);
-    
-    % distances matrix
-    dist = [];
-    for i=1:size(xy,2)
-        for j=1:size(xyP,2)
-            a = xy(:,i);
-            b = xyP(:,j);
-            dist(i,j) = norm(a-b);
-        end
-    end
+    dmat = getDistMatrix(data, frame, ids, w);
     
     % get min distances
-    [d, ix] = min(dist);
+    [d, ix] = min(dmat);
+    % actually, this line was an essence of the whole method
     
-    n = size(xy,2);
+    frameData = data.Frames(frame);
+    n = frameData.nObjects;
     result = zeros(n,1);
     prev = ids{frame-1};
+    
+    % solve conflicts
+    u = unique(ix);
+    if numel(u) < numel(d)
+        h = histc(ix,u); % count occurrences
+        for i=find(h>1) % Gotcha! here is ours conflict
+            same = find(ix==u(i)); % rects with the same index
+            [~,m] = min(d(same)); % the closest of them
+            same = removerows(same','ind',m); % rows to remove
+            
+            ix = removerows(ix','ind',same); % remove them
+            d = removerows(d','ind',same); % remove
+            prev = removerows(prev,'ind',same); % remove
+        end
+    end
     
     % assign previous ids
     result(ix) = prev;
@@ -74,28 +75,6 @@ for frame=2:data.nFrames
     ids{frame} = result;
 end;
 
-end
-
-% returns matrix of features (nFeatures, nRectangles)
-function fmat = featureMatrix(frameData, w)
-    nObjs = frameData.nObjects;
-    fmat = [];
-    for i = 1:nObjs
-        obj = frameData.objects(i);
-        fmat(:, i) = getFVector(obj, w);
-    end;
-end
-
-% returns one feature vector for one object
-% w = [a;b;c;d] is a vector of weights
-% a - stands for xy, b - scale, c - velocity, d - hog
-function v = getFVector(obj, w)
-    box = obj.box;
-    r = [str2double(box.xc); str2double(box.yc)];
-    s = [str2double(box.w);  str2double(box.h) ];
-    hog = obj.hog;
-    h = reshape(hog, 10*5*31, 1);
-    v = [r*w(1); s*w(2); h*w(4)];
 end
 
 

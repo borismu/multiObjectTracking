@@ -6,7 +6,7 @@ function [ ids ] = getIdsFromFrame( frameData )
 n = frameData.nObjects;
 ids = zeros(n,1);
 for i = 1:n % fill in
-    ids(i) = str2double(frameData.objects(i).id);
+    ids(i) = sscanf(frameData.objects(i).id, '%i');
 end
 
 end
