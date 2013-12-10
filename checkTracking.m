@@ -31,7 +31,7 @@ for frame=2:data.nFrames
         sum(permutingOrig==permutingEst);
     
     if sum(permutingOrig~=permutingEst)>0
-        disp(frame);
+        %disp(frame);
     end
 end;
 

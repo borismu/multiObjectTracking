@@ -43,12 +43,13 @@ for frame=2:data.nFrames
     if numel(u) < numel(d)
         h = histc(ix,u); % count occurrences
         for i=find(h>1) % Gotcha! here is ours conflict
-            same = find(ix==u(i)); % rects with the same index
+            same = find(ix==u(i))'; % rects with the same index
             [~,m] = min(d(same)); % the closest of them
-            same = removerows(same','ind',m); % rows to remove
             
-            ix = removerows(ix','ind',same); % remove them
-            d = removerows(d','ind',same); % remove
+            same = removerows(same,'ind',m); % rows to remove
+            
+            ix = removerows(ix','ind',same)'; % remove them
+            d = removerows(d','ind',same)'; % remove
             prev = removerows(prev,'ind',same); % remove
         end
     end
@@ -57,19 +58,15 @@ for frame=2:data.nFrames
     result(ix) = prev;
     
     % check if it is too far away
-    for i=1:numel(d)
-        if d(i) > divergeDistance
-            result(ix(i)) = idCounter;
-            idCounter = idCounter+1;
-        end
+    for i=find(d>divergeDistance)
+        result(ix(i)) = idCounter;
+        idCounter = idCounter+1;
     end
     
     % create new ids
-    for i=1:n
-        if result(i) == 0
-            result(i) = idCounter;
-            idCounter = idCounter+1;
-        end
+    for i=find(result==0)
+        result(i) = idCounter;
+        idCounter = idCounter+1;
     end
     
     ids{frame} = result;
